@@ -603,6 +603,7 @@ router.get("/api/testing", async (req, res) => {
 
     console.log("response")
     console.log(response)
+    res.send("Hi testing")
 
 })
 
