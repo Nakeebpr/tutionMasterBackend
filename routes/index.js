@@ -31,6 +31,54 @@ router.get("/api", (req, res) => {
     res.send("From router")
 })
 
+router.post("/api/check_email", [
+    check("email", "Please enter a valid email").isEmail().notEmpty()
+], async (req, res) => {
+    const { email } = req.body;
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({
+            errors: errors.array(),
+            "message": errors.array()[0]?.msg,
+            "status": "Failure",
+        });
+    }
+    try {
+        const user = await loginModel.findOne({ email });
+        console.log(user)
+        if (!user) {
+            return res.status(404).json({
+                "message": "User Not Found",
+                "status": "Failure"
+            })
+        }
+
+        const { emailResponse, randomNumber } = await sendEmail(email)
+
+        console.log(randomNumber)
+
+        let newOtp = await loginModel.findOneAndUpdate({ email }, { otp: randomNumber }, { new: true })
+        console.log("newOtp")
+        console.log(newOtp)
+
+        const newOtpSaved = await newOtp.save();
+
+        return res.status(200).json({
+            "message": "OTP sent to the email",
+            "status": "Success"
+        })
+
+
+
+    } catch (error) {
+        res.status(500).json({
+            "response_code": "500",
+            "message": "Something Went Wrong...",
+            "status": "Failure"
+        })
+    }
+})
+
 
 router.post("/api/book_seat", [
     check("name", "Please enter a valid name").notEmpty(),
@@ -42,7 +90,9 @@ router.post("/api/book_seat", [
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         return res.status(400).json({
-            errors: errors.array()
+            errors: errors.array(),
+            "message": errors.array()[0]?.msg,
+            "status": "Failure",
         });
     }
 
@@ -138,7 +188,6 @@ router.post("/api/book_seat", [
     // console.log(user)
     // res.send(name)
 })
-
 
 
 router.post("/api/send_email", [
@@ -296,7 +345,7 @@ router.post("/api/send_email_message", [
 
             if (codeUpdate) {
 
-                res.status(200).json({
+                return res.status(200).json({
                     "response_code": "200",
                     "message": "Email sent.",
                     "status": "Success"
@@ -316,7 +365,7 @@ router.post("/api/send_email_message", [
                 console.log("whatsAppMessage", whatsAppMessage)
             }
 
-            res.status(200).json({
+            return res.status(200).json({
                 "response_code": "200",
                 "message": "Email sent.",
                 "status": "Success"
@@ -448,33 +497,40 @@ router.post("/api/contactUs", [
         });
     }
 
-    let messageSent = await contactUsModel.findOne({ email, otp });
-    if (!messageSent) {
-        return res.status(401).json({
-            "message": "Incorrect OTP",
+    try {
+        let messageSent = await contactUsModel.findOne({ email, otp });
+        if (!messageSent) {
+            return res.status(401).json({
+                "message": "Incorrect OTP",
+                "status": "Failure",
+            })
+        }
+
+        const data = {
+            name: name,
+            subject: subject,
+            message: message,
+        }
+
+        messageSent = await contactUsModel.find({ email: email, otp: otp })
+
+        const newArray = messageSent[0].message.push(message)
+        const updatedDocument = await messageSent[0].save();
+
+        if (messageSent) {
+            return res.status(200).json({
+                "message": "Message Sent Successfully",
+                "status": "Success",
+            })
+        }
+    } catch (error) {
+        console.log(error)
+        return res.status(500).json({
+            "message": "Something went wrong",
             "status": "Failure",
         })
     }
-
-    const data = {
-        name: name,
-        subject: subject,
-        message: message,
-    }
-
-    messageSent = await contactUsModel.find({ email: email, otp: otp })
-
-    const newArray = messageSent[0].message.push(message)
-    const updatedDocument = await messageSent[0].save();
-
-    if (messageSent) {
-        return res.status(200).json({
-            "message": "Message Sent Successfully",
-            "status": "Success",
-        })
-    }
 })
-
 
 
 router.post("/api/login", [
@@ -503,7 +559,7 @@ router.post("/api/login", [
         console.log(user)
         if (!user) {
             return res.status(404).json({
-                "message": "User Doesn't Exists",
+                "message": "Email Or Password Is Incorrect",
                 "status": "Failure",
             })
         }
@@ -553,7 +609,52 @@ router.post("/api/login", [
 
 })
 
+router.post("/api/reset_password", [
+    check("email", "Please Enter Valid Email").isEmail().notEmpty(),
+    check("password", "Please Enter Password").notEmpty(),
+    check("otp", "Please Enter Valid OTP").notEmpty().isLength({ min: 4 }).isLength({ max: 4 }),
+], async (req, res) => {
 
+    try {
+        const { email, otp, password } = req.body;
+        console.log(email, otp, password)
+
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({
+                errors: errors.array(),
+                "message": errors.array()[0]?.msg,
+                "status": "Failure",
+            });
+        }
+
+        const user = await loginModel.findOne({ email, otp });
+        if (!user) {
+            return res.status(400).json({
+                "message": "User Not Found",
+                "status": "Failure",
+            });
+        }
+
+        let newPassword = await loginModel.findOneAndUpdate({ email, otp }, { password: password }, { new: true });
+
+        const newPasswordSaved = await newPassword.save();
+
+        return res.status(200).json({
+            "message": "Password Updated SuccessFully",
+            "status": "Success",
+        });
+
+
+    } catch (error) {
+        return res.status(500).json({
+            message: "Something Went Wrong",
+            status: "Failure"
+        })
+    }
+
+
+})
 
 
 router.get("/api/studentData", auth, async (req, res) => {
@@ -590,20 +691,6 @@ router.get("/api/studentData", auth, async (req, res) => {
             status: "Failure"
         })
     }
-
-    console.log("response")
-    console.log(response)
-
-})
-router.get("/api/testing", async (req, res) => {
-    // const users = await bookSeatModel.find({})
-    // console.log(users)
-    // res.send(users)
-    // const response = await sendEmail("test@gmailPass.com")
-
-    console.log("response")
-    console.log(response)
-    res.send("Hi testing")
 
 })
 
