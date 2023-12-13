@@ -29,12 +29,13 @@ const jwtString = process.env.JWT_STRING
 // multer config start
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        cb(null, './src/uploads')
+        const uploadPath = process.env.VERCEL_ENV === 'production' ? './public/uploads' : './src/uploads';
+        cb(null, uploadPath);
     },
     filename: function (req, file, cb) {
-        cb(null, file.originalname.replace(/\s+/g, '_'))
+        cb(null, file.originalname.replace(/\s+/g, '_'));
     }
-})
+});
 
 const upload = multer({ storage: storage })
 // multer config end
@@ -725,7 +726,7 @@ router.post("/api/upload_image", auth, upload.single("image"), async (req, res) 
 
         return res.status(200).json({
             "message": "Image uploaded",
-            "path": "http://localhost:5000/" + req.file.filename,
+            "path": process.env.BASE_URL + req.file.filename,
             "status": "Success",
         });
     } catch (error) {
