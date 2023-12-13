@@ -556,8 +556,6 @@ router.post("/api/login", [
     const { email, password } = req.body
     console.log(email, password)
 
-
-
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         return res.status(400).json({
@@ -713,6 +711,9 @@ router.get("/api/studentData", auth, async (req, res) => {
 
 router.post("/api/upload_image", auth, upload.single("image"), async (req, res) => {
 
+
+    console.log(process.env.BASE_URL)
+
     try {
         const isAdmin = await loginModel.findOne({ _id: req.user.id })
         if (!isAdmin) {
@@ -722,21 +723,9 @@ router.post("/api/upload_image", auth, upload.single("image"), async (req, res) 
             })
         }
 
-        const { imageTitle } = req.body;
-
-        const data = new imageModel({
-            imageTitle: imageTitle,
-            image: "http://localhost:5000/" + req.file.filename
-        })
-
-        const imageSaved = await data.save();
-
-        console.log("process.env.BASE_URL + req.file.filename")
-        console.log(process.env.BASE_URL + req.file.filename)
-        console.log("http://localhost:5000/" + req.file.filename)
-
         return res.status(200).json({
             "message": "Image uploaded",
+            "path": "http://localhost:5000/" + req.file.filename,
             "status": "Success",
         });
     } catch (error) {
@@ -748,7 +737,47 @@ router.post("/api/upload_image", auth, upload.single("image"), async (req, res) 
         });
     }
 
+})
 
+
+router.post("/api/save_image", auth, async (req, res) => {
+
+    try {
+        const isAdmin = await loginModel.findOne({ _id: req.user.id })
+        if (!isAdmin) {
+            return res.status(408).json({
+                message: "Not Authorized",
+                status: "Failure",
+            })
+        }
+
+        const { imageTitle, imagePath } = req.body;
+
+        const data = new imageModel({
+            imageTitle: imageTitle,
+            image: {
+                path: imagePath
+            }
+        })
+
+        const imageSaved = await data.save();
+
+        // console.log("process.env.BASE_URL + req.file.filename")
+        // console.log(process.env.BASE_URL + req.file.filename)
+        // console.log("http://localhost:5000/" + req.file.filename)
+
+        return res.status(200).json({
+            "message": "Image uploaded successfully",
+            "status": "Success",
+        });
+    } catch (error) {
+
+        console.log(error)
+        return res.status(500).json({
+            "message": "Something went wrong",
+            "status": "Failure",
+        });
+    }
 
 })
 
