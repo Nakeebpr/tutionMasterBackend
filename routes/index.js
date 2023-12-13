@@ -8,7 +8,7 @@ const { check, validationResult } = require("express-validator");
 const axios = require("axios")
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-
+const multer = require("multer")
 
 const { sendEmail } = require("../helpers/sendEmail")
 const bookSeatModel = require("../models/bookSeat");
@@ -16,6 +16,9 @@ const contactUsModel = require("../models/contactUsModel");
 const loginModel = require("../models/loginModel")
 const { sendWhatsApp } = require("../helpers/sendWhatsApp");
 const auth = require("../middleWare/auth");
+const imageModel = require("../models/imageModel");
+
+
 
 // const fromEmail = process.env.FROM_EMAIL
 // const gmailPass = process.env.GMAIL_PASS
@@ -23,7 +26,20 @@ const twilioAcc = process.env.TWILIO_ACCOUNT_SID
 const twilioAuth = process.env.TWILIO_AUTH_TOKEN
 const jwtString = process.env.JWT_STRING
 
-// wati.io data
+// multer config start
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, './src/uploads')
+    },
+    filename: function (req, file, cb) {
+        cb(null, file.originalname.replace(/\s+/g, '_'))
+    }
+})
+
+const upload = multer({ storage: storage })
+// multer config end
+
+
 
 
 
@@ -540,8 +556,6 @@ router.post("/api/login", [
     const { email, password } = req.body
     console.log(email, password)
 
-
-
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         return res.status(400).json({
@@ -690,6 +704,79 @@ router.get("/api/studentData", auth, async (req, res) => {
             message: "Something Went Wrong",
             status: "Failure"
         })
+    }
+
+})
+
+
+router.post("/api/upload_image", auth, upload.single("image"), async (req, res) => {
+
+
+    console.log(process.env.BASE_URL)
+
+    try {
+        const isAdmin = await loginModel.findOne({ _id: req.user.id })
+        if (!isAdmin) {
+            return res.status(408).json({
+                message: "Not Authorized",
+                status: "Failure",
+            })
+        }
+
+        return res.status(200).json({
+            "message": "Image uploaded",
+            "path": "http://localhost:5000/" + req.file.filename,
+            "status": "Success",
+        });
+    } catch (error) {
+
+        console.log(error)
+        return res.status(500).json({
+            "message": "Something went wrong",
+            "status": "Failure",
+        });
+    }
+
+})
+
+
+router.post("/api/save_image", auth, async (req, res) => {
+
+    try {
+        const isAdmin = await loginModel.findOne({ _id: req.user.id })
+        if (!isAdmin) {
+            return res.status(408).json({
+                message: "Not Authorized",
+                status: "Failure",
+            })
+        }
+
+        const { imageTitle, imagePath } = req.body;
+
+        const data = new imageModel({
+            imageTitle: imageTitle,
+            image: {
+                path: imagePath
+            }
+        })
+
+        const imageSaved = await data.save();
+
+        // console.log("process.env.BASE_URL + req.file.filename")
+        // console.log(process.env.BASE_URL + req.file.filename)
+        // console.log("http://localhost:5000/" + req.file.filename)
+
+        return res.status(200).json({
+            "message": "Image uploaded successfully",
+            "status": "Success",
+        });
+    } catch (error) {
+
+        console.log(error)
+        return res.status(500).json({
+            "message": "Something went wrong",
+            "status": "Failure",
+        });
     }
 
 })
