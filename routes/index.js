@@ -725,7 +725,7 @@ router.post("/api/upload_image", auth, upload.single("image"), async (req, res) 
 
         return res.status(200).json({
             "message": "Image uploaded",
-            "path": "http://localhost:5000/" + req.file.filename,
+            "path": process.env.BASE_URL + req.file.filename,
             "status": "Success",
         });
     } catch (error) {
