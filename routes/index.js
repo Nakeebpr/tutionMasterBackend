@@ -237,7 +237,7 @@ router.post("/api/send_email", [
 
         // code for email if i send email using helper start
         const { emailResponse, randomNumber } = await sendEmail(email)
-        console.log(emailResponse, randomNumber);
+        // console.log(emailResponse, randomNumber);
 
         if (phoneNo) {
             const whatsAppMessage = await sendWhatsApp(randomNumber, phoneNo)
@@ -726,7 +726,8 @@ router.post("/api/upload_image", auth, upload.single("image"), async (req, res) 
 
         return res.status(200).json({
             "message": "Image uploaded",
-            "path": process.env.BASE_URL + req.file.filename,
+            // "path": process.env.BASE_URL + req.file.filename, //for live
+            "path": "http://localhost:5000/" + req.file.filename, //for local
             "status": "Success",
         });
     } catch (error) {
