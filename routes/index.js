@@ -644,7 +644,7 @@ router.get("/api/studentData", auth, async (req, res) => {
         filter.phoneNo = new RegExp(phoneNo, 'i');
     }
     if (className) {
-        filter.className = new RegExp(className, 'i');
+        filter.classRoom = new RegExp(className, 'i');
     }
 
     const isAdmin = await loginModel.findOne({ _id: req.user.id })
