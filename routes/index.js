@@ -239,10 +239,13 @@ router.post("/api/send_email", [
         const { emailResponse, randomNumber } = await sendEmail(email)
         // console.log(emailResponse, randomNumber);
 
-        if (phoneNo) {
-            const whatsAppMessage = await sendWhatsApp(randomNumber, phoneNo)
-            console.log("whatsAppMessage", whatsAppMessage)
-        }
+
+        // comment whatsapp things for now
+
+        // if (phoneNo) {
+        //     const whatsAppMessage = await sendWhatsApp(randomNumber, phoneNo)
+        //     console.log("whatsAppMessage", whatsAppMessage)
+        // }
 
         // Handle the response or error here
         res.status(200).json({
@@ -252,58 +255,6 @@ router.post("/api/send_email", [
         });
 
         // code for email if i send email using helper end
-
-
-        // code for email if i send email from this page only start
-
-        // const min = 1000; // Smallest 4-digit number
-        // const max = 9999; // Largest 4-digit number
-        // const randomNumber = Math.floor(Math.random() * (max - min + 1)) + min;
-
-
-        // let mailTransporter = nodemailer.createTransport({
-        //     ame: 'box5294',
-        //     host: 'smtp.gmail.com',
-        //     port: 465,
-        //     secure: true,
-        //     auth: {
-        //         user: fromEmail,
-        //         pass: gmailPass
-        //     }
-        // })
-
-        // let mailDetails = {
-        //     from: fromEmail,
-        //     to: email,
-        //     subject: 'OTP for the booking',
-        //     html: `<p>Your otp is ${randomNumber}</p>`
-        // };
-
-        // mailTransporter.sendMail(mailDetails, function (err, data) {
-        //     if (err) {
-        //         console.log("mail detail: ", mailDetails);
-        //         console.log("email error: ", err);
-        //         // var data = err;
-        //         // var method = "Error In OTP from mail Sent User Registration.log(User Registration / Email Verification API(log))";
-        //         res.status(200).json({
-        //             // message: error
-        //             "response_code": "200",
-        //             "message": err.message,
-        //             "status": "Failure"
-        //         })
-        //     } else {
-        //         console.log("Email sent");
-        //         // var data = "Email Sent Success";
-        //         // var method = "Success Email Sent User Registration.log(User Registration / Email Verification API(log))";
-        //         res.status(200).json({
-        //             "response_code": "200",
-        //             "message": "Email sent.",
-        //             "status": "Success"
-        //         })
-        //     }
-        // });
-
-        // code for email if i send email from this page only end
 
 
         user = new bookSeatModel({
@@ -674,8 +625,27 @@ router.post("/api/reset_password", [
 
 router.get("/api/studentData", auth, async (req, res) => {
 
+    const { name, email, phoneNo, className, page, itemsPerPage } = req.query;
+    const pageSize = itemsPerPage;
+
+    const filter = {};
+
     console.log("req.user")
     console.log(req.user)
+    console.log(name)
+
+    if (name) {
+        filter.name = new RegExp(name, 'i');
+    }
+    if (email) {
+        filter.email = new RegExp(email, 'i');
+    }
+    if (phoneNo) {
+        filter.phoneNo = new RegExp(phoneNo, 'i');
+    }
+    if (className) {
+        filter.className = new RegExp(className, 'i');
+    }
 
     const isAdmin = await loginModel.findOne({ _id: req.user.id })
     if (!isAdmin) {
@@ -686,7 +656,11 @@ router.get("/api/studentData", auth, async (req, res) => {
     }
 
     try {
-        const users = await bookSeatModel.find({}, { name: 1, email: 1, phoneNo: 1, classRoom: 1, _id: 0 })
+
+        const pageNumber = parseInt(page, 10) || 1;
+        const skip = (pageNumber - 1) * pageSize;
+
+        const users = await bookSeatModel.find(filter, { name: 1, email: 1, phoneNo: 1, classRoom: 1, _id: 0 }).skip(skip).limit(pageSize)
         if (!users) {
             return res.status(200).json({
                 "message": "No Data Available",
@@ -694,10 +668,16 @@ router.get("/api/studentData", auth, async (req, res) => {
             })
         }
 
+        const totalItems = (await bookSeatModel.find({})).length
+
+        const totalPagesCount = Math.ceil(totalItems / pageSize)
+
 
         return res.status(200).json({
             message: users,
-            status: "Success"
+            status: "Success",
+            totalPagesCount,
+            itemsPerPage: pageSize
         })
     } catch (error) {
         console.log(error)
@@ -775,6 +755,99 @@ router.post("/api/save_image", auth, async (req, res) => {
     } catch (error) {
 
         console.log(error)
+        return res.status(500).json({
+            "message": "Something went wrong",
+            "status": "Failure",
+        });
+    }
+
+})
+
+router.get("/api/getPhotos", async (req, res) => {
+
+    const { page, itemsPerPage } = req.query;
+    const pageSize = itemsPerPage;
+
+    try {
+        const pageNumber = parseInt(page, 10) || 1;
+        const skip = (pageNumber - 1) * pageSize;
+
+        const photoData = await imageModel.find({}).skip(skip).limit(pageSize);
+
+        const totalItems = (await imageModel.find({})).length
+        console.log(totalItems)
+        const totalPagesCount = Math.ceil(totalItems / pageSize)
+
+        if (!photoData) {
+
+            return res.status(200).json({
+                message: "No Data Available",
+                status: "Failure",
+            })
+        }
+
+        return res.status(200).json({
+            message: photoData,
+            status: "Success",
+            totalPagesCount,
+            itemsPerPage: pageSize
+        })
+    } catch (error) {
+
+        console.log(error)
+        return res.status(500).json({
+            "message": "Something went wrong",
+            "status": "Failure",
+        });
+    }
+
+
+})
+
+
+router.post("/api/deleteImage", async (req, res) => {
+
+    const { id } = req.body;
+
+    console.log(id)
+
+    try {
+
+        const imageData = await imageModel.findByIdAndDelete(id);
+        console.log(imageData)
+
+        return res.status(200).json({
+            message: "Item deleted successfully",
+            status: "Success"
+        })
+
+    } catch (error) {
+        return res.status(500).json({
+            "message": "Something went wrong",
+            "status": "Failure",
+        });
+    }
+
+})
+
+router.post("/api/deleteStudent", async (req, res) => {
+
+    const { email } = req.body;
+
+    console.log(email)
+
+    try {
+
+        const studentData = await bookSeatModel.findOneAndDelete({ email: email });
+        console.log("studentData")
+        console.log(studentData)
+
+        return res.status(200).json({
+            message: "Item deleted successfully",
+            status: "Success"
+        })
+
+    } catch (error) {
         return res.status(500).json({
             "message": "Something went wrong",
             "status": "Failure",
