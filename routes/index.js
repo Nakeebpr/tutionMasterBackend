@@ -17,6 +17,7 @@ const loginModel = require("../models/loginModel")
 const { sendWhatsApp } = require("../helpers/sendWhatsApp");
 const auth = require("../middleWare/auth");
 const imageModel = require("../models/imageModel");
+const authUser = require("../middleWare/authUser");
 
 
 
@@ -523,7 +524,8 @@ router.post("/api/login", [
 
         const payload = {
             userInfo: {
-                id: user.id
+                id: user.id,
+                Role: user.Role
             }
         }
 
@@ -539,6 +541,7 @@ router.post("/api/login", [
                     "message": "Login Successfull",
                     "status": "Success",
                     "token": token,
+                    "Role": user.Role
                 })
             }
         )
@@ -753,6 +756,7 @@ router.get("/api/getPhotos", async (req, res) => {
         const skip = (pageNumber - 1) * pageSize;
 
         const photoData = await imageModel.find({}).skip(skip).limit(pageSize);
+        console.log(photoData)
 
         const totalItems = (await imageModel.find({})).length
         console.log(totalItems)
@@ -784,7 +788,7 @@ router.get("/api/getPhotos", async (req, res) => {
 
 })
 
-router.post("/api/deleteImage", async (req, res) => {
+router.post("/api/deleteImage", auth, async (req, res) => {
 
     const { id } = req.body;
 
@@ -809,7 +813,7 @@ router.post("/api/deleteImage", async (req, res) => {
 
 })
 
-router.post("/api/deleteStudent", async (req, res) => {
+router.post("/api/deleteStudent", auth, async (req, res) => {
 
     const { email } = req.body;
 
@@ -868,9 +872,72 @@ router.post("/api/updateStudent", auth, async (req, res) => {
             status: "Failure"
         })
     }
+})
 
 
+router.get("/api/studentInfo", authUser, async (req, res) => {
 
+    try {
+        const user = await loginModel.findById(req.user.id, { name: 1, email: 1, school: 1, gender: 1, password: 1, address: 1, phoneNo: 1, classRoom: 1, password: 1, _id: 0 })
+        if (!user) {
+            return res.status(200).json({
+                "message": "Data Not Available",
+                "status": "Success"
+            })
+        }
+
+        return res.status(200).json({
+            "data": user,
+            "status": "Success"
+        })
+    } catch (error) {
+        return res.status(500).json({
+            "message": "Something Went Wrong",
+            "status": "Failure"
+        })
+    }
+
+})
+
+router.post("/api/updateStudentInfo", authUser, async (req, res) => {
+    const { id, name, email, school, gender, password, address, phoneNo, classRoom } = req.body
+
+    console.log(id, name, email, school, gender, password, address, phoneNo, classRoom)
+
+    try {
+        const user = await loginModel.findOne({ email: id });
+        if (!user) {
+            return res.status(200).json({
+                "message": "No Data Available",
+                "status": "Failure"
+            })
+        }
+
+        const data = {
+            name,
+            email,
+            school,
+            gender,
+            password,
+            address,
+            phoneNo,
+            classRoom
+        }
+
+        const newData = await loginModel.findOneAndUpdate({ email: id }, data, { new: true });
+
+        console.log(newData)
+
+        return res.status(200).json({
+            message: "Record Updated Successfully",
+            status: "Success"
+        })
+    } catch (error) {
+        return res.status(500).json({
+            message: "Something Went Wrong",
+            status: "Failure"
+        })
+    }
 })
 
 

@@ -18,15 +18,14 @@ module.exports = function (req, res, next) {
     try {
 
         const decoded = jwt.verify(token, jwtString)
-        console.log("decoded")
-        console.log(decoded)
 
-        if (decoded.userInfo.Role !== "Admin") {
+        if (decoded.userInfo.Role !== "User") {
             return res.status(408).json({
                 "message": "Not Authenticated",
                 "status": "Failure",
             })
         }
+
         req.user = decoded.userInfo;
         next()
 
