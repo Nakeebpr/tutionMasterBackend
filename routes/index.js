@@ -41,9 +41,6 @@ const upload = multer({ storage: storage })
 // multer config end
 
 
-
-
-
 router.get("/api", (req, res) => {
     res.send("From router")
 })
@@ -95,7 +92,6 @@ router.post("/api/check_email", [
         })
     }
 })
-
 
 router.post("/api/book_seat", [
     check("name", "Please enter a valid name").notEmpty(),
@@ -206,7 +202,6 @@ router.post("/api/book_seat", [
     // res.send(name)
 })
 
-
 router.post("/api/send_email", [
     check("email", "Please enter a valid email").isEmail().notEmpty(),
 ], async (req, res) => {
@@ -275,7 +270,6 @@ router.post("/api/send_email", [
 
 
 })
-
 
 router.post("/api/send_email_message", [
     check("email", "Please enter a valid email").isEmail().notEmpty(),
@@ -363,7 +357,6 @@ router.post("/api/send_email_message", [
 
 })
 
-
 router.get("/api/send_whatsapp", async (req, res) => {
 
 
@@ -447,7 +440,6 @@ router.get("/api/send_whatsapp", async (req, res) => {
 
 })
 
-
 router.post("/api/contactUs", [
     check("name", "Please enter a valid name").notEmpty(),
     check("email", "Please enter a valid email").isEmail().notEmpty(),
@@ -499,7 +491,6 @@ router.post("/api/contactUs", [
         })
     }
 })
-
 
 router.post("/api/login", [
     check("email", "Please enter a valid email").isEmail().notEmpty(),
@@ -565,14 +556,6 @@ router.post("/api/login", [
     }
 
 
-    // user = new loginModel({
-    //     email,
-    //     password
-    // });
-
-    // const userSaved = await user.save();
-
-
 })
 
 router.post("/api/reset_password", [
@@ -621,7 +604,6 @@ router.post("/api/reset_password", [
 
 
 })
-
 
 router.get("/api/studentData", auth, async (req, res) => {
 
@@ -689,7 +671,6 @@ router.get("/api/studentData", auth, async (req, res) => {
 
 })
 
-
 router.post("/api/upload_image", auth, upload.single("image"), async (req, res) => {
 
 
@@ -720,7 +701,6 @@ router.post("/api/upload_image", auth, upload.single("image"), async (req, res) 
     }
 
 })
-
 
 router.post("/api/save_image", auth, async (req, res) => {
 
@@ -804,7 +784,6 @@ router.get("/api/getPhotos", async (req, res) => {
 
 })
 
-
 router.post("/api/deleteImage", async (req, res) => {
 
     const { id } = req.body;
@@ -853,6 +832,44 @@ router.post("/api/deleteStudent", async (req, res) => {
             "status": "Failure",
         });
     }
+
+})
+
+router.post("/api/updateStudent", auth, async (req, res) => {
+    const { id, name, email, phoneNo, classRoom } = req.body
+
+    try {
+        const user = await bookSeatModel.findOne({ email: id });
+        if (!user) {
+            return res.status(200).json({
+                "message": "No Data Available",
+                "status": "Failure"
+            })
+        }
+
+        const data = {
+            name,
+            email,
+            phoneNo,
+            classRoom
+        }
+
+        const newData = await bookSeatModel.findOneAndUpdate({ email: id }, data, { new: true });
+
+        console.log(newData)
+
+        return res.status(200).json({
+            message: "Record Updated Successfully",
+            status: "Success"
+        })
+    } catch (error) {
+        return res.status(500).json({
+            message: "Something Went Wrong",
+            status: "Failure"
+        })
+    }
+
+
 
 })
 
