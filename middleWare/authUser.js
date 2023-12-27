@@ -6,8 +6,6 @@ const jwtString = process.env.JWT_STRING;
 
 module.exports = function (req, res, next) {
     const token = req.headers["token"];
-    console.log("jwtToken")
-    console.log(token)
     if (!token) {
         return res.status(408).json({
             "message": "Not Authenticated",

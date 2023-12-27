@@ -6,8 +6,6 @@ const jwtString = process.env.JWT_STRING;
 
 module.exports = function (req, res, next) {
     const token = req.headers["token"];
-    console.log("jwtToken")
-    console.log(token)
     if (!token) {
         return res.status(408).json({
             "message": "Not Authenticated",
@@ -18,8 +16,6 @@ module.exports = function (req, res, next) {
     try {
 
         const decoded = jwt.verify(token, jwtString)
-        console.log("decoded")
-        console.log(decoded)
 
         if (decoded.userInfo.Role !== "Admin") {
             return res.status(408).json({

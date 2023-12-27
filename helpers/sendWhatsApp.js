@@ -23,7 +23,6 @@ const sendWhatsApp = async (otp, phoneNo) => {
         }
 
     } catch (error) {
-        console.log("error : ", error)
         throw error
     }
 

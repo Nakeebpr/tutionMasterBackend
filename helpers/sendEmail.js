@@ -36,7 +36,6 @@ const sendEmail = async (toEmail) => {
         };
 
         const emailResponse = await mailTransporter.sendMail(mailDetails);
-        console.log("Email sent in sendEmail");
         return { emailResponse, randomNumber };
 
     } catch (error) {
