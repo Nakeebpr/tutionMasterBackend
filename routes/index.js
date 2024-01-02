@@ -10,6 +10,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const multer = require("multer")
 
+
 const { sendEmail } = require("../helpers/sendEmail")
 const bookSeatModel = require("../models/bookSeat");
 const contactUsModel = require("../models/contactUsModel");
@@ -18,6 +19,7 @@ const { sendWhatsApp } = require("../helpers/sendWhatsApp");
 const auth = require("../middleWare/auth");
 const imageModel = require("../models/imageModel");
 const authUser = require("../middleWare/authUser");
+
 
 
 
@@ -40,6 +42,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage })
 // multer config end
+
 
 
 router.get("/api", (req, res) => {
@@ -825,7 +828,7 @@ router.post("/api/updateStudent", auth, async (req, res) => {
 router.get("/api/studentInfo", authUser, async (req, res) => {
 
     try {
-        const user = await loginModel.findById(req.user.id, { name: 1, email: 1, school: 1, gender: 1, password: 1, address: 1, phoneNo: 1, classRoom: 1, password: 1, _id: 0 })
+        const user = await loginModel.findById(req.user.id, { name: 1, email: 1, school: 1, gender: 1, password: 1, address: 1, phoneNo: 1, classRoom: 1, password: 1, imagePath: 1, registerNo: 1, _id: 0 })
         if (!user) {
             return res.status(200).json({
                 "message": "Data Not Available",
@@ -843,6 +846,14 @@ router.get("/api/studentInfo", authUser, async (req, res) => {
             "status": "Failure"
         })
     }
+
+})
+router.get("/api/studentInformation/:id", async (req, res) => {
+
+    return res.status(200).json({
+        "data": "user",
+        "status": "Success"
+    })
 
 })
 
@@ -867,6 +878,64 @@ router.post("/api/updateStudentInfo", authUser, async (req, res) => {
             address,
             phoneNo,
             classRoom
+        }
+
+        const newData = await loginModel.findOneAndUpdate({ email: id }, data, { new: true });
+
+        return res.status(200).json({
+            message: "Record Updated Successfully",
+            status: "Success"
+        })
+    } catch (error) {
+        return res.status(500).json({
+            message: "Something Went Wrong",
+            status: "Failure"
+        })
+    }
+})
+
+
+router.post("/api/upload_image_user", authUser, upload.single("image"), async (req, res) => {
+
+    try {
+        const isAdmin = await loginModel.findOne({ _id: req.user.id })
+        if (!isAdmin) {
+            return res.status(408).json({
+                message: "Not Authorized",
+                status: "Failure",
+            })
+        }
+
+        return res.status(200).json({
+            "message": "Image uploaded",
+            // "path": process.env.BASE_URL + req.file.filename, //for live
+            "path": "http://localhost:5000/" + req.file.filename, //for local
+            "status": "Success",
+        });
+    } catch (error) {
+        return res.status(500).json({
+            "message": "Something went wrong",
+            "status": "Failure",
+        });
+    }
+
+})
+
+
+router.post("/api/updateProfilepicture", authUser, async (req, res) => {
+    const { id, imageUrl } = req.body
+
+    try {
+        const user = await loginModel.findOne({ email: id });
+        if (!user) {
+            return res.status(200).json({
+                "message": "No Data Available",
+                "status": "Failure"
+            })
+        }
+
+        const data = {
+            imagePath: imageUrl
         }
 
         const newData = await loginModel.findOneAndUpdate({ email: id }, data, { new: true });

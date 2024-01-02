@@ -22,12 +22,18 @@ const loginSchema = new mongoose.Schema({
     address: {
         type: String,
     },
+    imagePath: {
+        type: String,
+    },
     phoneNo: {
         type: String,
     },
     password: {
         type: String,
         require: true
+    },
+    registerNo: {
+        type: String,
     },
     Role: {
         type: String,
