@@ -92,7 +92,6 @@ module.exports.uploadImage = async (req, res) => {
 
 }
 
-
 module.exports.saveImage = async (req, res) => {
 
     try {
@@ -169,8 +168,15 @@ module.exports.updateStudent = async (req, res) => {
             phoneNo,
             classRoom
         }
+        const dataLogin = {
+            name,
+            email,
+            phoneNo,
+            classRoom
+        }
 
         const newData = await bookSeatModel.findOneAndUpdate({ email: id }, data, { new: true });
+        const newLoginData = await loginModel.findOneAndUpdate({ email: id }, dataLogin, { new: true });
 
         return res.status(200).json({
             message: "Record Updated Successfully",

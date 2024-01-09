@@ -105,7 +105,7 @@ module.exports.bookSeat = async (req, res) => {
 
     if (user) {
         return res.status(200).json({
-            "message": "Student Registered Successfully",
+            "message": "Request Sent Successfully",
             "status": "Success",
         })
     }

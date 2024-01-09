@@ -1,6 +1,7 @@
 
 
-const imageModel = require("../models/imageModel")
+const imageModel = require("../models/imageModel");
+const loginModel = require("../models/loginModel");
 
 
 module.exports.getPhotos = async (req, res) => {
@@ -37,6 +38,36 @@ module.exports.getPhotos = async (req, res) => {
             "status": "Failure",
         });
     }
+}
 
 
+module.exports.isEmailAvailable = async (req, res) => {
+
+    const { email } = req.params;
+    console.log(email)
+
+    try {
+        const emailAvailable = await loginModel.findOne({ email: email });
+
+        console.log(emailAvailable)
+
+        if (!emailAvailable) {
+
+            return res.status(200).json({
+                message: false,
+                status: "Success",
+            })
+        } else {
+            return res.status(200).json({
+                message: true,
+                status: "Success",
+            })
+        }
+
+    } catch (error) {
+        return res.status(500).json({
+            "message": "Something went wrong",
+            "status": "Failure",
+        });
+    }
 }

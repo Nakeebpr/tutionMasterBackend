@@ -43,6 +43,10 @@ const loginSchema = new mongoose.Schema({
     otp: {
         type: String,
         require: true
+    },
+    booking: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "bookSeat"
     }
 }, {
     timestamps: true

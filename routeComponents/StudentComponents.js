@@ -1,13 +1,15 @@
 
 
 
-const loginModel = require("../models/loginModel")
+const loginModel = require("../models/loginModel");
+const bookSeatModel = require("../models/bookSeat")
 
 module.exports.studentInfo = async (req, res) => {
     try {
 
         console.log(req.user.id)
-        const user = await loginModel.findById(req.user.id, { name: 1, email: 1, school: 1, gender: 1, password: 1, address: 1, phoneNo: 1, classRoom: 1, password: 1, imagePath: 1, registerNo: 1, _id: 0 })
+        const user = await loginModel.findById(req.user.id, { name: 1, email: 1, school: 1, gender: 1, password: 1, address: 1, phoneNo: 1, classRoom: 1, password: 1, imagePath: 1, registerNo: 1, _id: 0 }).populate("booking", "-_id name email phoneNo classRoom").exec()
+
         if (!user) {
             return res.status(200).json({
                 "message": "Data Not Available",
@@ -48,23 +50,66 @@ module.exports.updateStudentInfo = async (req, res) => {
             })
         }
 
-        const data = {
-            name,
-            email,
-            school,
-            gender,
-            password,
-            address,
-            phoneNo,
-            classRoom
+        const isBooked = await bookSeatModel.findOne({ email: id })
+
+        if (isBooked) {
+            const bookingData = {
+                name,
+                email,
+                classRoom,
+                phoneNo
+            }
+            const newBooking = await bookSeatModel.findOneAndUpdate({ email: id }, bookingData, { new: true });
+
+            const data = {
+                name,
+                classRoom,
+                phoneNo,
+                email,
+                school,
+                gender,
+                password,
+                address,
+                booking: isBooked._id
+            }
+
+            const newData = await loginModel.findOneAndUpdate({ email: id }, data, { new: true });
+
+            return res.status(200).json({
+                message: "Record Updated Successfully",
+                status: "Success"
+            })
+        } else {
+
+            let newBooking = new bookSeatModel({
+                name,
+                email,
+                classRoom,
+                phoneNo
+            })
+
+            const bookingSave = await newBooking.save();
+
+            const data = {
+                name,
+                email,
+                school,
+                gender,
+                password,
+                address,
+                phoneNo,
+                classRoom
+            }
+
+            const newData = await loginModel.findOneAndUpdate({ email: id }, data, { new: true });
+
+            return res.status(200).json({
+                message: "Record Updated Successfully",
+                status: "Success"
+            })
         }
 
-        const newData = await loginModel.findOneAndUpdate({ email: id }, data, { new: true });
 
-        return res.status(200).json({
-            message: "Record Updated Successfully",
-            status: "Success"
-        })
     } catch (error) {
         return res.status(500).json({
             message: "Something Went Wrong",
